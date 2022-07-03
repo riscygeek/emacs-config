@@ -6,6 +6,7 @@
 (setq ring-bell-function 'ignore)	; Disable the bell
 (setq inhibit-startup-message t)	; Don't display the startup screen
 (setq scroll-step 1)			; Make scrolling smoother
+(setq scroll-conservatively 10000)	; Remove the jumpiness
 (setq custom-file "~/.emacs.d/custom.el")
 
 ; Use ESC instead of tripple-ESC
