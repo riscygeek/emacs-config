@@ -68,7 +68,12 @@
 
 ;; Use the Doom Modeline.
 (use-package all-the-icons
-  :if (display-graphic-p))
+  :if (display-graphic-p)
+  :commands all-the-icons-install-fonts
+  :init
+  (unless (find-font (font-spec :name "all-the-icons"))
+    (all-the-icons-install-fonts t)))
+
 (use-package doom-modeline
   :ensure t
   :init (doom-modeline-mode 1)
@@ -171,6 +176,9 @@
 (use-package magit
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+; TODO: Add forge
+;(use-package forge)
 
 (use-package treemacs)
 (use-package treemacs-evil
