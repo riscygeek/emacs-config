@@ -6,6 +6,7 @@
 (setq ring-bell-function 'ignore)	; Disable the bell
 (setq inhibit-startup-message t)	; Don't display the startup screen
 (setq scroll-step 1)			; Make scrolling smoother
+(setq custom-file "~/.emacs.d/custom.el")
 
 ; Use ESC instead of tripple-ESC
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
@@ -106,7 +107,9 @@
   (benni/leader-keys
     "o"  '(counsel-find-file :which-key "open file")
     "t"  '(:ignore t :which-key "toggles")
-    "tt" '(counsel-load-theme :which-key "choose theme"))
+    "tt" '(counsel-load-theme :which-key "choose theme")
+    "b"  '(:ignore t :which-key "buffer")
+    "bk" '(kill-buffer :which-key "kill buffer"))
 
 (general-define-key "C-M-j" 'counsel-switch-buffer)
 (general-define-key "C-x M-t" 'counsel-load-theme)
@@ -147,3 +150,26 @@
 
 (benni/leader-keys
   "ts" '(hydra-text-scale/body :which-key "scale text"))
+
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  (when (file-directory-p "~/src")
+    (setq projectile-project-search-path '("~/src")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
+(benni/leader-keys
+  "p" '(projectile-command-map :which-key "projectile command map"))
+
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+
+(use-package magit)
+  ;:custom
+  ;(magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+(use-package treemacs)
