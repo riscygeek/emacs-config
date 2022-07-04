@@ -32,8 +32,7 @@
 (global-display-line-numbers-mode t)
 
 ;; Disable line numbers for some modes.
-(dolist (mode '(org-mode-hook
-		term-mode-hook
+(dolist (mode '(term-mode-hook
 		shell-mode-hook
 		eshell-mode-hook))
   (add-hook mode (lambda() (display-line-numbers-mode 0))))
@@ -178,7 +177,7 @@
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
-; TODO: Add forge
+; TODO: Add forge https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
 ;(use-package forge)
 
 (use-package treemacs)
@@ -188,3 +187,36 @@
   :after (treemacs projectile))
 (use-package treemacs-magit
   :after (treemacs magit))
+
+(defun benni/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 0)
+  (auto-fill-mode 0)
+  (visual-line-mode 1)
+  (setq evil-auto-indent nil))
+
+(use-package org
+  :hook (org-mode . benni/org-mode-setup)
+  :config
+  (setq org-ellipsis " ▾"
+	org-hide-emphasis-markers t))
+
+(font-lock-add-keywords 'org-mode
+                        '(("^ *\\([-]\\) "
+                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+(use-package org-evil
+  :after (org evil))
+(use-package org-bullets
+  :after org
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+ 
+;(set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
+;(set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+;(set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+;(set-face-attribute 'org-indent	nil :inherit '(org-hide fixed-pitch))
+;(set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+;(set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+;(set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+;(set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
