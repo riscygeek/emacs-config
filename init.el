@@ -110,12 +110,15 @@
     :global-prefix "C-SPC"))
 
   (benni/leader-keys
-    "a"  '(org-agenda-list :which-key "org agenda")
+    "a"  '(org-agenda :which-key "org agenda")
     "."  '(counsel-find-file :which-key "open file")
     "t"  '(:ignore t :which-key "toggles")
     "tt" '(counsel-load-theme :which-key "choose theme")
+    "g"  '(magit-status :which-key "magit")
     "b"  '(:ignore t :which-key "buffer")
-    "bk" '(kill-buffer :which-key "kill buffer"))
+    "bb" '(counsel-ibuffer :which-key "open buffer")
+    "bk" '(kill-current-buffer :which-key "kill current buffer")
+    "bK" '(kill-buffer :which-key "kill buffer"))
 
 (general-define-key "C-M-j" 'counsel-switch-buffer)
 (general-define-key "C-x M-t" 'counsel-load-theme)
