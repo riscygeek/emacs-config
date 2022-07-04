@@ -110,13 +110,16 @@
     :global-prefix "C-SPC"))
 
   (benni/leader-keys
-    "a"  '(org-agenda :which-key "org agenda")
+    "o"  '(:ignore o :which-key "org")
+    "oa" '(org-agenda :which-key "org agenda")
+    "oc" '(org-capture :which-key "org capture")
     "."  '(counsel-find-file :which-key "open file")
     "t"  '(:ignore t :which-key "toggles")
     "tt" '(counsel-load-theme :which-key "choose theme")
     "g"  '(magit-status :which-key "magit")
     "b"  '(:ignore t :which-key "buffer")
     "bb" '(counsel-ibuffer :which-key "open buffer")
+    "bs" '(counsel-switch-buffer :which-key "switch buffer")
     "bk" '(kill-current-buffer :which-key "kill current buffer")
     "bK" '(kill-buffer :which-key "kill buffer"))
 
@@ -223,6 +226,10 @@
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
   
+(defun benni/read-file-as-string (path)
+  (with-temp-buffer
+    (insert-file-contents path)
+    (buffer-string)))
 
 (use-package org
   :hook (org-mode . benni/org-mode-setup)
@@ -231,12 +238,44 @@
 	org-hide-emphasis-markers t
 	org-done 'time
 	org-agenda-start-with-log-mode t
-	org-log-into-drawer t
-	org-agenda-files '("~/Dokumente/org/TODO.org"
-			   "~/Dokumente/org/Birthdays.org")
-	org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+	org-log-into-drawer t)
+
+  ;; Setup org-habit
+  (require 'org-habit)
+  (add-to-list 'org-modules 'org-habit)
+  (setq org-habit-graph-column 60)
+
+  ;; Set org files
+  (setq org-agenda-files '("~/Dokumente/org/TODO.org"
+			   "~/Dokumente/org/Birthdays.org"
+			   "~/Dokumente/org/Archive.org"))
+
+  ;; Set org keywords
+  (setq org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
 			    (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANCELLED(k@)")))
 
+  ;; Set org archive targets
+  (setq org-refile-targets
+	'(("Archive.org" :maxlevel . 2)
+	  ("TODO.org" :maxlevel . 1)))
+
+  ;; Save org buffers after refiling
+  (advice-add 'org-refile :after 'org-save-all-org-buffers)
+
+  ;; Configure common tags
+  (setq org-tag-alist
+	'((:startgroup)
+	  ; Put mutually-exclusive tags here:
+	  (:endgroup)
+	  ("@home" . ?H)
+	  ("@school" . ?S)
+	  ("@work" . ?W)
+	  ("agenda" . ?a)
+	  ("planning" . ?p)
+	  ("note" . ?n)
+	  ("idea" . ?i)))
+	   
+  
   ;; Configure custom agenda views
   (setq org-agenda-custom-commands
 	'(("d" "Dashboard"
@@ -285,7 +324,32 @@
 		   (org-agenda-files org-agenda-files)))
 	    (todo "CANCELLED"
 		  ((org-agenda-overriding-header "Cancelled Projects")
-		   (org-agenda-files org-agenda-files))))))))
+		   (org-agenda-files org-agenda-files)))))))
+  (setq org-capture-templates
+	'(("t" "Tasks / Projects")
+	  ("tt" "Task" entry (file+olp "~/Dokumente/org/TODO.org" "Inbox")
+	   "* TODO %?\n  %a\n  %i" :empty-lines 1)
+
+	  ("j" "Journal Entries")
+	  ("jj" "Journal" entry
+	   (file+olp+datetree "~/Dokumente/org/Journal.org")
+	   "\n* %<%I:%M %p> - Journal :journal:\n\n%?\n\n"
+	   ;; ,(benni/read-file-as-string "~/Dokumente/org/Daily.org")
+	   :clock-in :clock-resume
+	   :empty-lines 1)
+	  ("jm" "Meeting" entry
+	   (file+olp+datetree "~/Dokumente/org/Journal.org")
+	   "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+	   :clock-in :clock-resume
+	   :empty-lines 1)
+
+	  ("w" "Workflows")
+	  ("we" "Checking Email" entry (file+olp+datetree "~/Dokumente/org/Journal.org")
+	   "* Checking Email :email:\n\n%?" :clock-in :clock-resume :empty-lines 1)
+
+	  ("m" "Metrics Capture")
+	  ("mw" "Weight" table-line (file+headline "~/Dokumente/org/Metrics.org" "Weight")
+	   "| %U | %^{Weight} | %^{Notes} |" :kill-buffer t))))
 	    
 		  
   ;(benni/org-font-setup))
