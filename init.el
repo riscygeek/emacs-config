@@ -110,7 +110,8 @@
     :global-prefix "C-SPC"))
 
   (benni/leader-keys
-    "o"  '(counsel-find-file :which-key "open file")
+    "a"  '(org-agenda-list :which-key "org agenda")
+    "."  '(counsel-find-file :which-key "open file")
     "t"  '(:ignore t :which-key "toggles")
     "tt" '(counsel-load-theme :which-key "choose theme")
     "b"  '(:ignore t :which-key "buffer")
@@ -195,28 +196,51 @@
   (visual-line-mode 1)
   (setq evil-auto-indent nil))
 
+(defun benni/org-font-setup ()
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+  (dolist (face '((org-level-1 . 1.2)
+		  (org-level-2 . 1.1)
+		  (org-level-3 . 1.05)
+		  (org-level-4 . 1.0)
+		  (org-level-5 . 1.1)
+		  (org-level-6 . 1.1)
+		  (org-level-7 . 1.1)
+		  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
+
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+  
+
 (use-package org
   :hook (org-mode . benni/org-mode-setup)
   :config
   (setq org-ellipsis " ▾"
-	org-hide-emphasis-markers t))
+	org-hide-emphasis-markers t
+	org-done 'time
+	org-agenda-start-with-log-mode t
+	org-log-into-drawer t
+	org-agenda-files '("~/Dokumente/org/TODO.org"
+			   "~/Dokumente/org/Birthdays.org")
+	org-todo-keywords '((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+			    (sequence "BACKLOG(b)" "PLAN(p)" "READY(r)" "ACTIVE(a)" "REVIEW(v)" "WAIT(w@/!)" "HOLD(h)" "|" "COMPLETED(c)" "CANCELLED(k@)"))))
+  ;(benni/org-font-setup))
 
-(font-lock-add-keywords 'org-mode
-                        '(("^ *\\([-]\\) "
-                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 (use-package org-evil
   :after (org evil))
+
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
  
-;(set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
-;(set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-;(set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-;(set-face-attribute 'org-indent	nil :inherit '(org-hide fixed-pitch))
-;(set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-;(set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-;(set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-;(set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
