@@ -1,3 +1,8 @@
+#+title Emacs Config
+#+PROPERTY: header-args:emacs-lisp :tangle ./init.el
+
+* Baisc UI Configuration
+#+begin_src emacs-lisp 
 (scroll-bar-mode -1)			; Disable visible scrollbar
 (tool-bar-mode -1)              	; Disable the toolbar
 (tooltip-mode -1)               	; Disable tooltips
@@ -8,7 +13,12 @@
 (setq scroll-step 1)			; Make scrolling smoother
 (setq scroll-conservatively 10000)	; Remove the jumpiness
 (setq custom-file "~/.emacs.d/custom.el")
+#+end_src
 
+* Package management
+** Initialization
+This initializes the package managers.
+#+begin_src emacs-lisp 
 (require 'package)
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("org" . "https://orgmode.org/elpa/")
@@ -27,7 +37,10 @@
 
 (column-number-mode)
 (global-display-line-numbers-mode t)
+#+end_src
 
+** Ivy
+#+begin_src emacs-lisp 
 (use-package ivy
   :diminish
   :bind (("C-s" . swiper)
@@ -45,7 +58,10 @@
 	 ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
+#+end_src
 
+** Counsel
+#+begin_src emacs-lisp 
 (use-package counsel
   :bind (("M-x" . counsel-M-x)
 	 ("C-x b" . counsel-ibuffer)
@@ -54,7 +70,10 @@
 	 ("C-r" . 'counsel-minibuffer-history))
   :config
   (setq ivy-initial-inputs-alist nil))
+#+end_src
 
+** Appaerance
+#+begin_src emacs-lisp 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
@@ -73,7 +92,10 @@
 
 (use-package doom-themes
   :init (load-theme 'doom-palenight t))
+#+end_src
 
+** Helpful packages
+#+begin_src emacs-lisp 
 (use-package which-key
   :init (which-key-mode)
   :diminish which-key-mode
@@ -93,7 +115,10 @@
   ([remap describe-command] . helpful-command)
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
+#+end_src
 
+** Keybindings
+#+begin_src emacs-lisp 
 ;; Use ESC instead of tripple-ESC
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
@@ -154,7 +179,10 @@
 
 (benni/leader-keys
   "ts" '(hydra-text-scale/body :which-key "scale text"))
+#+end_src
 
+** Project management
+#+begin_src emacs-lisp 
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
@@ -172,7 +200,11 @@
   :after (treemacs projectile))
 (use-package treemacs-magit
   :after (treemacs magit))
+#+end_src
 
+** Org Mode
+*** Helper functions
+#+begin_src emacs-lisp
 (defun benni/org-mode-setup ()
   (org-indent-mode)
   (variable-pitch-mode 0)
@@ -216,6 +248,11 @@
       (org-babel-tangle))))
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'benni/org-babel-tangle-config)))
+  
+#+end_src
+
+*** Org
+#+begin_src emacs-lisp 
 
 (use-package org
   :hook (org-mode . benni/org-mode-setup)
@@ -358,3 +395,16 @@
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+#+end_src
+
+*** org-babel
+#+begin_src emacs-lisp :tangle ./new-init.el
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (python . t)))
+
+(push '("conf-unix" . conf-unix) org-src-lang-modes)
+#+end_src
+
