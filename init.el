@@ -155,15 +155,27 @@
 (benni/leader-keys
   "ts" '(hydra-text-scale/body :which-key "scale text"))
 
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  (when (file-directory-p "~/src")
+    (setq projectile-project-searchpath '("~/src")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
 (use-package magit
   :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+  (magit-display-buffer-function
+   #'magit-display-buffer-same-window-except-diff-v1))
 
-; TODO: Add forge https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
-;(use-package forge)
+;; TODO: Add forge https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
+;;(use-package forge)
 
 (use-package treemacs)
 (use-package treemacs-evil
@@ -172,6 +184,24 @@
   :after (treemacs projectile))
 (use-package treemacs-magit
   :after (treemacs magit))
+
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l") ;; Or 'C-l', 's-l'
+  :config
+  (lsp-enable-which-key-integration t))
+
+(use-package company
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map
+	      ("<tab>" . company-complete-selection))
+  (:map lsp-mode-map
+	("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
 
 (defun benni/org-mode-setup ()
   (org-indent-mode)

@@ -1,6 +1,8 @@
 #+title: Emacs Config
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el
 
+This is my personal emacs config.
+
 * Baisc UI Configuration
 #+begin_src emacs-lisp 
 (scroll-bar-mode -1)			; Disable visible scrollbar
@@ -181,18 +183,35 @@ This initializes the package managers.
   "ts" '(hydra-text-scale/body :which-key "scale text"))
 #+end_src
 
-** Project management
-#+begin_src emacs-lisp 
+** Development
+*** projectile
+#+begin_src emacs-lisp
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  (when (file-directory-p "~/src")
+    (setq projectile-project-searchpath '("~/src")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
-
+#+end_src
+*** magit
+#+begin_src emacs-lisp
 (use-package magit
   :custom
-  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+  (magit-display-buffer-function
+   #'magit-display-buffer-same-window-except-diff-v1))
 
-; TODO: Add forge https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
-;(use-package forge)
-
+;; TODO: Add forge https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
+;;(use-package forge)
+#+end_src
+*** treemacs
+#+begin_src emacs-lisp 
 (use-package treemacs)
 (use-package treemacs-evil
   :after (treemacs evil))
@@ -201,7 +220,29 @@ This initializes the package managers.
 (use-package treemacs-magit
   :after (treemacs magit))
 #+end_src
+*** lsp-mode
+#+begin_src emacs-lisp
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l") ;; Or 'C-l', 's-l'
+  :config
+  (lsp-enable-which-key-integration t))
+#+end_src
+*** company
+#+begin_src emacs-lisp
+(use-package company
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map
+	      ("<tab>" . company-complete-selection))
+  (:map lsp-mode-map
+	("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
 
+#+end_src
 ** Org Mode
 *** Helper functions
 #+begin_src emacs-lisp
@@ -407,4 +448,5 @@ This initializes the package managers.
 
 (push '("conf-unix" . conf-unix) org-src-lang-modes)
 #+end_src
+
 
