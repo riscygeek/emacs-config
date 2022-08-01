@@ -9,6 +9,56 @@
 (setq scroll-conservatively 10000)	; Remove the jumpiness
 (setq custom-file "~/.emacs.d/custom.el")
 
+;; Set frame transparency
+;(defvar benni/frame-transparency '(90 . 90))
+;(set-frame-parameter (selected-frame) 'alpha benni/frame-transparency)
+;(add-to-list 'default-frame-alist `(alpha . ,benni/frame-transparency))
+
+;; Make the frame fullscreen
+(set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
+;; Disable line numbers for some modes
+(dolist (mode '(term-mode-hook
+		  shell-mode-hook
+		  treemacs-mode-hook
+		  eshell-mode-hook
+		  vterm-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;; (setq c-default-style "linux"
+;;       c-basic-offset 4
+;; 	    indent-tabs-mode t)
+
+(add-hook 'c++-mode-hook
+		  (lambda ()
+			(setq c-default-style "linux"
+				  c-basic-offset 4
+				  indent-tabs-mode t)))
+
+(setq-default tab-width 4)
+
+(add-hook 'makefile-mode-hook
+		  (lambda ()
+			(setq tab-width 8
+				  sh-basic-offset 8
+				  indent-tabs-mode t)))
+
+(add-hook 'sh-mode-hook
+		  (lambda ()
+			(setq tab-width 4
+				  sh-basic-offset 4
+				  sh-indent-for-case-label 0
+				  sh-indent-for-case-alt '+
+				  indent-tabs-mode t)))
+
+;; (setq	backup-directory-alist	'(("." . "~/.emacs.d/backups"))
+;; 		backup-by-copying		1
+;; 		delete-old-version		-1
+;; 		version-control			t
+;; 		vc-make-backup-files	t
+;; 		auto-save-file-name-transforms '((".*" . "~/.emacs.d/auto-save-list/" t)))
+
 (require 'package)
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("org" . "https://orgmode.org/elpa/")
@@ -111,6 +161,7 @@
   "."  '(counsel-find-file :which-key "open file")
   "t"  '(:ignore t :which-key "toggles")
   "tt" '(counsel-load-theme :which-key "choose theme")
+  "tm" '(treemacs :which-key "treemacs")
   "g"  '(magit-status :which-key "magit")
   "b"  '(:ignore t :which-key "buffer")
   "bb" '(counsel-ibuffer :which-key "open buffer")
@@ -177,7 +228,9 @@
 ;; TODO: Add forge https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
 ;;(use-package forge)
 
-(use-package treemacs)
+(use-package treemacs
+  :bind (:map treemacs-mode-map
+			  ("J" . treemacs-select-directory)))
 (use-package treemacs-evil
   :after (treemacs evil))
 (use-package treemacs-projectile
@@ -185,12 +238,28 @@
 (use-package treemacs-magit
   :after (treemacs magit))
 
+(use-package flycheck)
+
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l") ;; Or 'C-l', 's-l'
   :config
   (lsp-enable-which-key-integration t))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy
+  :after lsp)
+
+(add-hook 'c-mode-hook 'lsp)
+(add-hook 'c++-mode-hook 'lsp)
 
 (use-package company
   :after lsp-mode
@@ -202,6 +271,33 @@
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+
+(load "~/.emacs.d/insert-header-guard.el")
+(require 'insert-header-guard)
+(insert-header-guard-enable)
+
+(use-package evil-nerd-commenter
+  :bind ("C-7" . evilnc-comment-or-uncomment-lines))
+
+(add-to-list 'exec-path "~/.cargo/bin")
+(use-package rust-mode
+  :mode "\\.rs\\'")
+
+(use-package rustic)
+
+(use-package cargo
+  :init
+  (add-hook 'rust-mode-hook 'cargo-minor-mode)
+  (add-hook 'toml-mode-hook 'cargo-minor-mode))
+
+(use-package editorconfig
+  :config
+  (editorconfig-mode 1))
+
+(use-package compiler-explorer)
 
 (defun benni/org-mode-setup ()
   (org-indent-mode)
@@ -380,11 +476,54 @@
 
 					;(benni/org-font-setup))
 
-(use-package org-evil
-  :after (org evil))
+;; (use-package org-evil
+;;   :after (org evil))
 
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+(defun benni/org-autotangle ()
+  (org-babel-tangle))
+(add-hook 'org-mode-hook
+		  (lambda ()
+			(add-hook 'after-save-hook #'benni/org-autotangle)))
+
+(use-package term
+  :config
+  (setq explicit-shell-file-name "zsh"
+		  term-prompt-regexp "^[^#$%>\n]*[#$%>] *"))
+
+(use-package vterm
+  :commands vterm
+  :config
+  (setq vterm-max-scrollback 10000))
+
+(defun benni/configure-eshell ()
+  ;; Save command history when commands are entered
+  (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
+
+  ;; Truncate buffer for performace
+  (add-to-list 'eshell-output-filter-function 'eshell-truncate-buffer)
+
+  ;; Bind some useful keys for evil-mode
+  (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
+  (evil-define-key '(normal insert visual) eshell-mode-map (kbd "<home>") 'eshell-bol)
+  (evil-normalize-keymaps)
+
+  (setq	eshell-history-size 				10000
+			eshell-buffer-maximum-lines			10000
+			eshell-hist-ignoredups				t
+			eshell-scroll-to-bottom-on-input	t))
+
+(use-package eshell-git-prompty
+
+(use-package eshell
+  :hook (eshell-first-time-mode . benni/configure-eshell)
+  :config
+  (with-eval-after-load 'esh-opt
+	  (setq eshell-destroy-buffer-when-process-dies t
+			eshell-visual-commands '("htop" "zsh" "vim")))
+  (eshell-git-prompt-use-theme 'powerline))

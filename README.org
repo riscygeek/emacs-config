@@ -15,8 +15,61 @@ This is my personal emacs config.
 (setq scroll-step 1)			; Make scrolling smoother
 (setq scroll-conservatively 10000)	; Remove the jumpiness
 (setq custom-file "~/.emacs.d/custom.el")
+
+;; Set frame transparency
+;(defvar benni/frame-transparency '(90 . 90))
+;(set-frame-parameter (selected-frame) 'alpha benni/frame-transparency)
+;(add-to-list 'default-frame-alist `(alpha . ,benni/frame-transparency))
+
+;; Make the frame fullscreen
+(set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
+;; Disable line numbers for some modes
+(dolist (mode '(term-mode-hook
+		  shell-mode-hook
+		  treemacs-mode-hook
+		  eshell-mode-hook
+		  vterm-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
 #+end_src
 
+* Basic setq's
+#+begin_src emacs-lisp
+;; (setq c-default-style "linux"
+;;       c-basic-offset 4
+;; 	    indent-tabs-mode t)
+
+(add-hook 'c++-mode-hook
+		  (lambda ()
+			(setq c-default-style "linux"
+				  c-basic-offset 4
+				  indent-tabs-mode t)))
+
+(setq-default tab-width 4)
+
+(add-hook 'makefile-mode-hook
+		  (lambda ()
+			(setq tab-width 8
+				  sh-basic-offset 8
+				  indent-tabs-mode t)))
+
+(add-hook 'sh-mode-hook
+		  (lambda ()
+			(setq tab-width 4
+				  sh-basic-offset 4
+				  sh-indent-for-case-label 0
+				  sh-indent-for-case-alt '+
+				  indent-tabs-mode t)))
+
+;; (setq	backup-directory-alist	'(("." . "~/.emacs.d/backups"))
+;; 		backup-by-copying		1
+;; 		delete-old-version		-1
+;; 		version-control			t
+;; 		vc-make-backup-files	t
+;; 		auto-save-file-name-transforms '((".*" . "~/.emacs.d/auto-save-list/" t)))
+
+#+end_src
 * Package management
 ** Initialization
 This initializes the package managers.
@@ -138,6 +191,7 @@ This initializes the package managers.
   "."  '(counsel-find-file :which-key "open file")
   "t"  '(:ignore t :which-key "toggles")
   "tt" '(counsel-load-theme :which-key "choose theme")
+  "tm" '(treemacs :which-key "treemacs")
   "g"  '(magit-status :which-key "magit")
   "b"  '(:ignore t :which-key "buffer")
   "bb" '(counsel-ibuffer :which-key "open buffer")
@@ -212,13 +266,19 @@ This initializes the package managers.
 #+end_src
 *** treemacs
 #+begin_src emacs-lisp 
-(use-package treemacs)
+(use-package treemacs
+  :bind (:map treemacs-mode-map
+			  ("J" . treemacs-select-directory)))
 (use-package treemacs-evil
   :after (treemacs evil))
 (use-package treemacs-projectile
   :after (treemacs projectile))
 (use-package treemacs-magit
   :after (treemacs magit))
+#+end_src
+*** flycheck
+#+begin_src emacs-lisp
+(use-package flycheck)
 #+end_src
 *** lsp-mode
 #+begin_src emacs-lisp
@@ -228,6 +288,20 @@ This initializes the package managers.
   (setq lsp-keymap-prefix "C-c l") ;; Or 'C-l', 's-l'
   :config
   (lsp-enable-which-key-integration t))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy
+  :after lsp)
+
+(add-hook 'c-mode-hook 'lsp)
+(add-hook 'c++-mode-hook 'lsp)
 #+end_src
 *** company
 #+begin_src emacs-lisp
@@ -242,6 +316,43 @@ This initializes the package managers.
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
 
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+
+#+end_src
+*** C/C++ Automatic Header Guards
+#+begin_src emacs-lisp
+(load "~/.emacs.d/insert-header-guard.el")
+(require 'insert-header-guard)
+(insert-header-guard-enable)
+#+end_src
+*** Commenter
+#+begin_src emacs-lisp
+(use-package evil-nerd-commenter
+  :bind ("C-7" . evilnc-comment-or-uncomment-lines))
+#+end_src
+*** Rust
+#+begin_src emacs-lisp
+(add-to-list 'exec-path "~/.cargo/bin")
+(use-package rust-mode
+  :mode "\\.rs\\'")
+
+(use-package rustic)
+
+(use-package cargo
+  :init
+  (add-hook 'rust-mode-hook 'cargo-minor-mode)
+  (add-hook 'toml-mode-hook 'cargo-minor-mode))
+#+end_src
+*** EditorConfig
+#+begin_src emacs-lisp
+(use-package editorconfig
+  :config
+  (editorconfig-mode 1))
+#+end_src
+*** CompilerExplorer
+#+begin_src emacs-lisp
+(use-package compiler-explorer)
 #+end_src
 ** Org Mode
 *** Helper functions
@@ -428,8 +539,8 @@ This initializes the package managers.
 
 					;(benni/org-font-setup))
 
-(use-package org-evil
-  :after (org evil))
+;; (use-package org-evil
+;;   :after (org evil))
 
 (use-package org-bullets
   :after org
@@ -439,6 +550,14 @@ This initializes the package managers.
 
 #+end_src
 
+*** Auto-Tangle
+#+begin_src emacs-lisp
+(defun benni/org-autotangle ()
+  (org-babel-tangle))
+(add-hook 'org-mode-hook
+		  (lambda ()
+			(add-hook 'after-save-hook #'benni/org-autotangle)))
+#+end_src
 *** org-babel
 #+begin_src emacs-lisp :tangle ./new-init.el
 (org-babel-do-load-languages
@@ -448,5 +567,48 @@ This initializes the package managers.
 
 (push '("conf-unix" . conf-unix) org-src-lang-modes)
 #+end_src
+** Terminal modes
+*** term-mode
+#+begin_src emacs-lisp
+(use-package term
+  :config
+  (setq explicit-shell-file-name "zsh"
+		  term-prompt-regexp "^[^#$%>\n]*[#$%>] *"))
+#+end_src
+*** vterm
+#+begin_src emacs-lisp
+(use-package vterm
+  :commands vterm
+  :config
+  (setq vterm-max-scrollback 10000))
+#+end_src
+*** eshell
+#+begin_src emacs-lisp
+(defun benni/configure-eshell ()
+  ;; Save command history when commands are entered
+  (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
 
+  ;; Truncate buffer for performace
+  (add-to-list 'eshell-output-filter-function 'eshell-truncate-buffer)
+
+  ;; Bind some useful keys for evil-mode
+  (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
+  (evil-define-key '(normal insert visual) eshell-mode-map (kbd "<home>") 'eshell-bol)
+  (evil-normalize-keymaps)
+
+  (setq	eshell-history-size 				10000
+			eshell-buffer-maximum-lines			10000
+			eshell-hist-ignoredups				t
+			eshell-scroll-to-bottom-on-input	t))
+
+(use-package eshell-git-prompty
+
+(use-package eshell
+  :hook (eshell-first-time-mode . benni/configure-eshell)
+  :config
+  (with-eval-after-load 'esh-opt
+	  (setq eshell-destroy-buffer-when-process-dies t
+			eshell-visual-commands '("htop" "zsh" "vim")))
+  (eshell-git-prompt-use-theme 'powerline))
+#+end_src
 
