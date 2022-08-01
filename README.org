@@ -381,16 +381,16 @@ This initializes the package managers.
 #+end_src
 *** dap-mode
 #+begin_src emacs-lisp
-(use-package dap-mode
-  :commands dap-debug
-  :config
-  (require 'dap-node)
-  (dap-node-setup)
-
-  (general-define-key
-   :keymaps 'lsp-mode-map
-   :prefix lsp-keymap-prefix
-   "d" '(dap-hydra t :wh "debugger")))
+;;(use-package dap-mode
+;;  :commands dap-debug
+;;  :config
+;;  (require 'dap-node)
+;;  (dap-node-setup)
+;;
+;;  (general-define-key
+;;   :keymaps 'lsp-mode-map
+;;   :prefix lsp-keymap-prefix
+;;   "d" '(dap-hydra t :wh "debugger")))
 #+end_src
 *** company
 #+begin_src emacs-lisp

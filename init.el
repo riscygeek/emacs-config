@@ -326,16 +326,16 @@
 (add-hook 'c-mode-hook 'lsp)
 (add-hook 'c++-mode-hook 'lsp)
 
-(use-package dap-mode
-  :commands dap-debug
-  :config
-  (require 'dap-node)
-  (dap-node-setup)
-
-  (general-define-key
-   :keymaps 'lsp-mode-map
-   :prefix lsp-keymap-prefix
-   "d" '(dap-hydra t :wh "debugger")))
+;;(use-package dap-mode
+;;  :commands dap-debug
+;;  :config
+;;  (require 'dap-node)
+;;  (dap-node-setup)
+;;
+;;  (general-define-key
+;;   :keymaps 'lsp-mode-map
+;;   :prefix lsp-keymap-prefix
+;;   "d" '(dap-hydra t :wh "debugger")))
 
 (use-package company
   :after lsp-mode
