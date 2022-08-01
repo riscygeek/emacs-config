@@ -518,7 +518,7 @@
 			eshell-hist-ignoredups				t
 			eshell-scroll-to-bottom-on-input	t))
 
-(use-package eshell-git-prompty
+(use-package eshell-git-prompt)
 
 (use-package eshell
   :hook (eshell-first-time-mode . benni/configure-eshell)
