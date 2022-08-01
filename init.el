@@ -7,7 +7,9 @@
 (setq inhibit-startup-message t)	; Don't display the startup screen
 (setq scroll-step 1)			; Make scrolling smoother
 (setq scroll-conservatively 10000)	; Remove the jumpiness
-(setq custom-file "~/.emacs.d/custom.el")
+(setq custom-file (locate-user-emacs-file "custom.el"))
+(setq use-dialog-box nil)
+(load custom-file 'noerror 'nomessage)
 
 ;; Set frame transparency
 ;(defvar benni/frame-transparency '(90 . 90))
@@ -59,6 +61,20 @@
 ;; 		vc-make-backup-files	t
 ;; 		auto-save-file-name-transforms '((".*" . "~/.emacs.d/auto-save-list/" t)))
 
+;; SPC + r
+(recentf-mode 1)
+
+;; M-x + M-p / M-n
+(setq history-length 100)
+(savehist-mode 1)
+
+;; Remember the last position in a file
+(save-place-mode 1)
+
+;; Automatically refresh buffers
+(setq global-auto-revert-non-file-buffers t)
+(global-auto-revert-mode 1)
+
 (require 'package)
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("org" . "https://orgmode.org/elpa/")
@@ -104,6 +120,23 @@
 	 ("C-r" . 'counsel-minibuffer-history))
   :config
   (setq ivy-initial-inputs-alist nil))
+
+(use-package prescient
+  :config
+  (setq prescient-sort-length-enable t
+		prescient-filter-method '(literal regexp initialism))
+  (prescient-persist-mode 1))
+
+(use-package ivy-prescient
+  :after counsel
+  :config
+  (setq ivy-prescient-retain-classic-highlighting t)
+  (ivy-prescient-mode 1))
+
+(use-package company-prescient
+  :after company
+  :config
+  (company-prescient-mode 1))
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -167,7 +200,8 @@
   "bb" '(counsel-ibuffer :which-key "open buffer")
   "bs" '(counsel-switch-buffer :which-key "switch buffer")
   "bk" '(kill-current-buffer :which-key "kill current buffer")
-  "bK" '(kill-buffer :which-key "kill buffer"))
+  "bK" '(kill-buffer :which-key "kill buffer")
+  "r"  '(recentf-open-files :which-key "recent files"))
 
 (use-package evil
   :init
