@@ -58,8 +58,7 @@
 ;; 		backup-by-copying		1
 ;; 		delete-old-version		-1
 ;; 		version-control			t
-;; 		vc-make-backup-files	t
-;; 		auto-save-file-name-transforms '((".*" . "~/.emacs.d/auto-save-list/" t)))
+;; 		vc-make-backup-files	t))
 
 ;; SPC + r
 (recentf-mode 1)
@@ -74,6 +73,18 @@
 ;; Automatically refresh buffers
 (setq global-auto-revert-non-file-buffers t)
 (global-auto-revert-mode 1)
+
+;; Default is 800KiB.
+(setq gc-cons-threshold (* 128 1024 1024))
+
+(defun benni/display-startup-time ()
+  (message "Emacs loaded in %s seconds with %d garbage collections."
+		   (format "%.2f"
+				   (float-time
+					(time-subtract after-init-time before-init-time)))
+		   gcs-done)
+  (setq gc-cons-threshold (* 4 1024 1024)))
+(add-hook 'emacs-startup-hook #'benni/display-startup-time)
 
 (require 'package)
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
@@ -90,9 +101,22 @@
 
 (require 'use-package)
 (setq use-package-always-ensure t)
+;; (setq use-package-verbose t)
 
 (column-number-mode)
 (global-display-line-numbers-mode t)
+
+(use-package auto-package-update
+  :custom
+  (auto-package-update-interval 7)
+  (auto-package-update-prompt-before-update t)
+  (auto-package-update-hide-results t)
+  :config
+  (auto-package-update-maybe)
+  (auto-package-update-at-time "09:00"))
+
+(use-package no-littering)
+(setq auto-save-file-name-transforms `(("*.*" ,(no-littering-expand-var-file-name "auto-save/") t)))
 
 (use-package ivy
   :diminish
@@ -128,13 +152,13 @@
   (prescient-persist-mode 1))
 
 (use-package ivy-prescient
-  :after counsel
+  :after (counsel prescient)
   :config
   (setq ivy-prescient-retain-classic-highlighting t)
   (ivy-prescient-mode 1))
 
 (use-package company-prescient
-  :after company
+  :after (company prescient)
   :config
   (company-prescient-mode 1))
 
@@ -158,16 +182,18 @@
   :init (load-theme 'doom-palenight t))
 
 (use-package which-key
-  :init (which-key-mode)
   :diminish which-key-mode
   :config
+  (which-key-mode)
   (setq which-key-idle-delay 0.5))
 
 (use-package ivy-rich
+  :after ivy
   :init
   (ivy-rich-mode 1))
 
 (use-package helpful
+  :commands (helpful-callable helpful-variable helpful-command helpful-key)
   :custom
   (counsel-describe-function-function #'helpful-callable)
   (counsel-describe-variable-function #'helpful-variable)
@@ -228,7 +254,8 @@
   (evil-collection-init))
 
 
-(use-package hydra)
+(use-package hydra
+  :defer t)
 
 					; Text scaling (TODO: Add keybind)
 (defhydra hydra-text-scale (:timeout 4)
@@ -252,15 +279,18 @@
   (setq projectile-switch-project-action #'projectile-dired))
 
 (use-package counsel-projectile
+  :after (counsel projectile)
   :config (counsel-projectile-mode))
 
 (use-package magit
+  :commands (magit-status)
   :custom
   (magit-display-buffer-function
    #'magit-display-buffer-same-window-except-diff-v1))
 
 ;; TODO: Add forge https://magit.vc/manual/forge/Token-Creation.html#Token-Creation
-;;(use-package forge)
+;;(use-package forge
+;;   :after magit)
 
 (use-package treemacs
   :bind (:map treemacs-mode-map
@@ -272,7 +302,8 @@
 (use-package treemacs-magit
   :after (treemacs magit))
 
-(use-package flycheck)
+(use-package flycheck
+  :defer t)
 
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
@@ -294,6 +325,17 @@
 
 (add-hook 'c-mode-hook 'lsp)
 (add-hook 'c++-mode-hook 'lsp)
+
+(use-package dap-mode
+  :commands dap-debug
+  :config
+  (require 'dap-node)
+  (dap-node-setup)
+
+  (general-define-key
+   :keymaps 'lsp-mode-map
+   :prefix lsp-keymap-prefix
+   "d" '(dap-hydra t :wh "debugger")))
 
 (use-package company
   :after lsp-mode
@@ -320,18 +362,37 @@
 (use-package rust-mode
   :mode "\\.rs\\'")
 
-(use-package rustic)
+(use-package rustic
+  :after rust-mode)
 
 (use-package cargo
+  :after rust-mode
   :init
   (add-hook 'rust-mode-hook 'cargo-minor-mode)
   (add-hook 'toml-mode-hook 'cargo-minor-mode))
 
+(use-package python-mode
+  :hook (python-mode . lsp-deferred)
+  :custom
+  ;; NOTE: Set these if Python 3 is called "python3".
+  ;; (python-shell-interpreter "python3")
+  ;; (dap-python-executable "python3")
+  (dap-python-debugger 'debugpy)
+  :config
+  (require 'dap-python))
+
+(use-package pyvenv
+  :after python-mode
+  :config
+  (pyvenv-mode 1))
+
 (use-package editorconfig
+  :defer t
   :config
   (editorconfig-mode 1))
 
-(use-package compiler-explorer)
+(use-package compiler-explorer
+  :commands (compiler-explorer))
 
 (defun benni/org-mode-setup ()
   (org-indent-mode)
@@ -378,7 +439,9 @@
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'benni/org-babel-tangle-config)))
 
 (use-package org
+  :pin org
   :hook (org-mode . benni/org-mode-setup)
+  :commands (org-capture org-agenda)
   :config
   (setq org-ellipsis " ▾"
 	org-hide-emphasis-markers t
@@ -514,7 +577,6 @@
 ;;   :after (org evil))
 
 (use-package org-bullets
-  :after org
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
@@ -525,7 +587,16 @@
 		  (lambda ()
 			(add-hook 'after-save-hook #'benni/org-autotangle)))
 
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+	 (python . t)))
+
+  (push '("conf-unix" . conf-unix) org-src-lang-modes))
+
 (use-package term
+  :commands term
   :config
   (setq explicit-shell-file-name "zsh"
 		  term-prompt-regexp "^[^#$%>\n]*[#$%>] *"))
@@ -540,7 +611,7 @@
   (add-hook 'eshell-pre-command-hook 'eshell-save-some-history)
 
   ;; Truncate buffer for performace
-  (add-to-list 'eshell-output-filter-function 'eshell-truncate-buffer)
+  (add-to-list 'eshell-output-filter-functions 'eshell-truncate-buffer)
 
   ;; Bind some useful keys for evil-mode
   (evil-define-key '(normal insert visual) eshell-mode-map (kbd "C-r") 'counsel-esh-history)
@@ -552,11 +623,13 @@
 			eshell-hist-ignoredups				t
 			eshell-scroll-to-bottom-on-input	t))
 
-(use-package eshell-git-prompt)
+(use-package eshell-git-prompt
+  :after eshell)
 
 (use-package eshell
   :hook (eshell-first-time-mode . benni/configure-eshell)
   :config
+  (require 'eshell-git-prompt)
   (with-eval-after-load 'esh-opt
 	  (setq eshell-destroy-buffer-when-process-dies t
 			eshell-visual-commands '("htop" "zsh" "vim")))
